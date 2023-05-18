@@ -1,3 +1,4 @@
+import locale
 import os
 import discord
 import requests
@@ -34,14 +35,10 @@ def get_daily_menu(url, target_weekday=None):
     menu = []
 
     for item in menu_items:
-        title_element = item.find('h5')
-        title = title_element.text.strip()
-        if title_element.find('span'):
-            subtitle = title_element.find('span').text.strip()
-            title = title.replace(subtitle, '')
-            title = title.strip()
-
-        menu.append(title)
+        title_element = item.find('strong')
+        if title_element:
+            title = title_element.text.strip()
+            menu.append(title)
     return menu
 
 
@@ -68,10 +65,13 @@ async def on_ready():
 
 @tree.command(name="meal", description="Gives you the meal of the day", guild=discord.Object(id=GUILD))
 async def meal_command(interaction, day: str = None):
+    locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
+
     if day is None:
-        await interaction.response.send_message(await print_menu(URL))
+        target_weekday = date.today().strftime('%A').capitalize()
     else:
-        await interaction.response.send_message(await print_menu(URL, day.capitalize()))
+        target_weekday = day.capitalize()
+    await interaction.response.send_message(await print_menu(URL, target_weekday))
 
 
 client.run(TOKEN)
