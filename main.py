@@ -1,5 +1,6 @@
 import locale
 import os
+import random
 import discord
 import requests
 from discord import app_commands
@@ -44,16 +45,17 @@ def get_daily_menu(url, target_weekday=None):
 
 async def print_menu(url, target_weekday=None):
     menu = get_daily_menu(url, target_weekday)
-
     if target_weekday is None:
         target_weekday = "heute"
 
     if menu:
-        embed = discord.Embed(title=f'Essen für {target_weekday}')
+        color = random.randint(0, 0xFFFFFF)
+        embed = discord.Embed(title=f'Essen für {target_weekday}', color=color)
         for i, item in enumerate(menu, start=1):
             embed.add_field(name=f'Essen {i}', value=item, inline=False)
+        embed.url = URL
     else:
-        embed = discord.Embed(title=f'Kein Speiseplan für {target_weekday} verfügbar.')
+        embed = discord.Embed(title=f'Kein Speiseplan für {target_weekday} verfügbar', color=0xff0000)
     return embed
 
 
@@ -76,16 +78,21 @@ async def allmeals_command(interaction):
     weekdays = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
     current_weekday = today.weekday()
 
-    embed = discord.Embed(title='Speisepläne für die Woche')
+    color = random.randint(0, 0xFFFFFF)
+    embed = discord.Embed(title='Speiseplan für die Restwoche', color=color)
+    embed.url = URL
 
     for i in range(current_weekday, len(weekdays)):
         target_weekday = weekdays[i]
         menu_embed = await print_menu(URL, target_weekday)
 
         if menu_embed:
-            embed.add_field(name=f'{target_weekday}', value=menu_embed.to_dict(), inline=False)
+            embed.add_field(name=f'{target_weekday}', value='\u200B', inline=False)
+            fields = menu_embed.fields
+            for field in fields:
+                embed.add_field(name=field.name, value=field.value, inline=False)
         else:
-            embed.add_field(name=f'{target_weekday}', value='Kein Speiseplan verfügbar.', inline=False)
+            continue
     await interaction.response.send_message(embed=embed)
 
 
