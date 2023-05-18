@@ -53,25 +53,53 @@ async def print_menu(url, target_weekday=None):
         for i, item in enumerate(menu, start=1):
             message += f'* Essen {i}: {item}\n'
     else:
-        message = f'Kein Speiseplan für {target_weekday} verfügbar.'
-    return '```md\n' + message + '```'
+        message = f'# Kein Speiseplan für {target_weekday} verfügbar.'
+    return message
+
+
+@tree.command(name="meal", description="Gives you the meal of the day", guild=discord.Object(id=GUILD))
+async def meal_command(interaction, day: str = None):
+    locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
+    if day is None:
+        target_weekday = date.today().strftime('%A').capitalize()
+    else:
+        target_weekday = day.capitalize()
+    menu = await print_menu(URL, target_weekday)
+    if menu:
+        message = '```md\n' + menu + '```'
+    else:
+        message = 'Kein Speiseplan für {} verfügbar.'.format(target_weekday)
+    await interaction.response.send_message(message)
+
+
+@tree.command(name="allmeals", description="Gives you all remaining meals of the week", guild=discord.Object(id=GUILD))
+async def allmeals_command(interaction):
+    locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
+    today = date.today()
+    weekdays = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
+    current_weekday = today.weekday()
+    message = ''
+
+    for i in range(current_weekday, len(weekdays)):
+        target_weekday = weekdays[i]
+        menu = await print_menu(URL, target_weekday)
+
+        if menu:
+            message += menu
+        else:
+            message += f'Kein Speiseplan für {target_weekday} verfügbar.\n'
+
+    if message:
+        message = '```md\n' + message + '```'
+    else:
+        message = 'Keine verbleibenden Speisepläne für die Woche verfügbar.'
+    await interaction.response.send_message(message)
 
 
 @client.event
 async def on_ready():
     await tree.sync(guild=discord.Object(id=GUILD))
     print(f'{client.user} is ready to deliver some meals!')
-
-
-@tree.command(name="meal", description="Gives you the meal of the day", guild=discord.Object(id=GUILD))
-async def meal_command(interaction, day: str = None):
-    locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
-
-    if day is None:
-        target_weekday = date.today().strftime('%A').capitalize()
-    else:
-        target_weekday = day.capitalize()
-    await interaction.response.send_message(await print_menu(URL, target_weekday))
 
 
 client.run(TOKEN)
