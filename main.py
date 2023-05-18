@@ -49,12 +49,12 @@ async def print_menu(url, target_weekday=None):
         target_weekday = "heute"
 
     if menu:
-        message = f'# Essen für {target_weekday}:\n'
+        embed = discord.Embed(title=f'Essen für {target_weekday}')
         for i, item in enumerate(menu, start=1):
-            message += f'* Essen {i}: {item}\n'
+            embed.add_field(name=f'Essen {i}', value=item, inline=False)
     else:
-        message = f'# Kein Speiseplan für {target_weekday} verfügbar.'
-    return message
+        embed = discord.Embed(title=f'Kein Speiseplan für {target_weekday} verfügbar.')
+    return embed
 
 
 @tree.command(name="meal", description="Gives you the meal of the day", guild=discord.Object(id=GUILD))
@@ -64,12 +64,9 @@ async def meal_command(interaction, day: str = None):
         target_weekday = date.today().strftime('%A').capitalize()
     else:
         target_weekday = day.capitalize()
-    menu = await print_menu(URL, target_weekday)
-    if menu:
-        message = '```md\n' + menu + '```'
-    else:
-        message = 'Kein Speiseplan für {} verfügbar.'.format(target_weekday)
-    await interaction.response.send_message(message)
+
+    embed = await print_menu(URL, target_weekday)
+    await interaction.response.send_message(embed=embed)
 
 
 @tree.command(name="allmeals", description="Gives you all remaining meals of the week", guild=discord.Object(id=GUILD))
@@ -78,22 +75,18 @@ async def allmeals_command(interaction):
     today = date.today()
     weekdays = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
     current_weekday = today.weekday()
-    message = ''
+
+    embed = discord.Embed(title='Speisepläne für die Woche')
 
     for i in range(current_weekday, len(weekdays)):
         target_weekday = weekdays[i]
-        menu = await print_menu(URL, target_weekday)
+        menu_embed = await print_menu(URL, target_weekday)
 
-        if menu:
-            message += menu
+        if menu_embed:
+            embed.add_field(name=f'{target_weekday}', value=menu_embed.to_dict(), inline=False)
         else:
-            message += f'Kein Speiseplan für {target_weekday} verfügbar.\n'
-
-    if message:
-        message = '```md\n' + message + '```'
-    else:
-        message = 'Keine verbleibenden Speisepläne für die Woche verfügbar.'
-    await interaction.response.send_message(message)
+            embed.add_field(name=f'{target_weekday}', value='Kein Speiseplan verfügbar.', inline=False)
+    await interaction.response.send_message(embed=embed)
 
 
 @client.event
