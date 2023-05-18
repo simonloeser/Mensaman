@@ -1,10 +1,11 @@
+import asyncio
 import locale
 import os
 import random
 import discord
 import requests
 from discord import app_commands
-from datetime import date
+from datetime import date, timedelta, datetime
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
@@ -100,10 +101,44 @@ async def allmeals_command(interaction):
     await interaction.response.send_message(embed=embed)
 
 
+async def send_daily_menu():
+    while True:
+        now = datetime.now()
+        target_time = now.replace(hour=10, minute=0, second=0, microsecond=0)
+        if now >= target_time:
+            today = date.today()
+            current_weekday = today.strftime('%A').capitalize()
+            channel = client.get_channel(CHANNEL_ID)
+            embed = await print_menu(URL, current_weekday)
+            await channel.send(embed=embed)
+            target_time = target_time + timedelta(days=1)
+
+        time_difference = target_time - now
+        await asyncio.sleep(time_difference.total_seconds())
+
+
 @client.event
 async def on_ready():
     await tree.sync(guild=discord.Object(id=GUILD))
     print(f'{client.user} is ready to deliver some meals!')
+    client.loop.create_task(send_daily_menu())
 
 
-client.run(TOKEN)
+async def main():
+    try:
+        locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
+        await client.start(TOKEN)
+        await send_daily_menu()
+    finally:
+        await client.close()
+
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        pass
+
+    loop.run_until_complete(loop.shutdown_asyncgens())
+    loop.close()
