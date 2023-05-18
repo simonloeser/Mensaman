@@ -55,7 +55,8 @@ async def print_menu(url, target_weekday=None):
             embed.add_field(name=f'Essen {i}', value=item, inline=False)
         embed.url = URL
     else:
-        embed = discord.Embed(title=f'Kein Speiseplan für {target_weekday} verfügbar', color=0xff0000)
+        color = random.randint(0, 0xFFFFFF)
+        embed = discord.Embed(title=f'Kein Speiseplan für {target_weekday} verfügbar', color=color)
     return embed
 
 
@@ -86,13 +87,16 @@ async def allmeals_command(interaction):
         target_weekday = weekdays[i]
         menu_embed = await print_menu(URL, target_weekday)
 
-        if menu_embed:
-            embed.add_field(name=f'{target_weekday}', value='\u200B', inline=False)
+        if menu_embed and any(field.name.startswith('Essen ') for field in menu_embed.fields):
             fields = menu_embed.fields
+            meal_fields_added = False
+
             for field in fields:
-                embed.add_field(name=field.name, value=field.value, inline=False)
-        else:
-            continue
+                if field.name.startswith('Essen '):
+                    if not meal_fields_added:
+                        embed.add_field(name=target_weekday, value='', inline=False)
+                        meal_fields_added = True
+                    embed.add_field(name=field.name, value=field.value, inline=False)
     await interaction.response.send_message(embed=embed)
 
 
