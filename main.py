@@ -42,7 +42,6 @@ def get_daily_menu(url, target_weekday=None):
             title = title.strip()
 
         menu.append(title)
-
     return menu
 
 
