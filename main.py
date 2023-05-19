@@ -124,7 +124,9 @@ def change_mensa(mensa: str = None):
 
 
 async def send_daily_menu():
+    global URL
     while True:
+        URL = os.getenv('URL_WILLI')
         now = datetime.now()
         target_time = now.replace(hour=10, minute=0, second=0, microsecond=0)
         if now >= target_time:
