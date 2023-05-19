@@ -13,7 +13,7 @@ load_dotenv()
 TOKEN = os.getenv('TOKEN')
 GUILD = os.getenv('GUILD')
 CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
-URL = os.getenv('URL')
+URL = os.getenv('URL_HOPLA')
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
@@ -44,49 +44,58 @@ def get_daily_menu(url, target_weekday=None):
     return menu
 
 
-async def print_menu(url, target_weekday=None):
+async def print_menu(url, target_weekday=None, mensa=None):
     menu = get_daily_menu(url, target_weekday)
     if target_weekday is None:
         target_weekday = "heute"
 
+    if mensa is None:
+        mensa = 'Willi'
+
     if menu:
         color = random.randint(0, 0xFFFFFF)
-        embed = discord.Embed(title=f'Essen für {target_weekday}', color=color)
+        embed = discord.Embed(title=f'Essen für {target_weekday} ({mensa.capitalize()})', color=color)
         for i, item in enumerate(menu, start=1):
             embed.add_field(name=f'Essen {i}', value=item, inline=False)
         embed.url = URL
     else:
         color = random.randint(0, 0xFFFFFF)
-        embed = discord.Embed(title=f'Kein Speiseplan für {target_weekday} verfügbar', color=color)
+        embed = discord.Embed(title=f'Kein Speiseplan für {target_weekday} verfügbar ({mensa.capitalize()})', color=color)
     return embed
 
 
 @tree.command(name="meal", description="Gives you the meal of the day", guild=discord.Object(id=GUILD))
-async def meal_command(interaction, day: str = None):
+async def meal_command(interaction, day: str = None, mensa: str = None):
     locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
     if day is None:
         target_weekday = date.today().strftime('%A').capitalize()
     else:
         target_weekday = day.capitalize()
 
-    embed = await print_menu(URL, target_weekday)
+    change_mensa(mensa)
+
+    embed = await print_menu(URL, target_weekday, mensa)
     await interaction.response.send_message(embed=embed)
 
 
 @tree.command(name="allmeals", description="Gives you all remaining meals of the week", guild=discord.Object(id=GUILD))
-async def allmeals_command(interaction):
+async def allmeals_command(interaction, mensa: str = None):
     locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
     today = date.today()
     weekdays = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
     current_weekday = today.weekday()
 
+    change_mensa(mensa)
+    if mensa is None:
+        mensa = 'Willi'
+
     color = random.randint(0, 0xFFFFFF)
-    embed = discord.Embed(title='Speiseplan für die Restwoche', color=color)
+    embed = discord.Embed(title=f'Speiseplan für die Restwoche ({mensa.capitalize()})', color=color)
     embed.url = URL
 
     for i in range(current_weekday, len(weekdays)):
         target_weekday = weekdays[i]
-        menu_embed = await print_menu(URL, target_weekday)
+        menu_embed = await print_menu(URL, target_weekday, mensa)
 
         if menu_embed and any(field.name.startswith('Essen ') for field in menu_embed.fields):
             fields = menu_embed.fields
@@ -99,6 +108,20 @@ async def allmeals_command(interaction):
                         meal_fields_added = True
                     embed.add_field(name=field.name, value=field.value, inline=False)
     await interaction.response.send_message(embed=embed)
+
+
+def change_mensa(mensa: str = None):
+    global URL
+    if mensa is None or mensa.capitalize() == 'Willi':
+        URL = os.getenv('URL_WILLI')
+    elif mensa.capitalize() == 'Hopla':
+        URL = os.getenv('URL_HOPLA')
+    elif mensa.capitalize() == 'Kunst':
+        URL = os.getenv('URL_KUNST')
+    elif mensa.capitalize() == 'Avz':
+        URL = os.getenv('URL_AVZ')
+    elif mensa.capitalize() == 'Witz':
+        URL = os.getenv('URL_WITZ')
 
 
 async def send_daily_menu():
