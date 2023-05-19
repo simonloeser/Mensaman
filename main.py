@@ -112,16 +112,15 @@ async def allmeals_command(interaction, mensa: str = None):
 
 def change_mensa(mensa: str = None):
     global URL
-    if mensa is None or mensa.capitalize() == 'Willi':
-        URL = os.getenv('URL_WILLI')
-    elif mensa.capitalize() == 'Hopla':
-        URL = os.getenv('URL_HOPLA')
-    elif mensa.capitalize() == 'Kunst':
-        URL = os.getenv('URL_KUNST')
-    elif mensa.capitalize() == 'Avz':
-        URL = os.getenv('URL_AVZ')
-    elif mensa.capitalize() == 'Witz':
-        URL = os.getenv('URL_WITZ')
+    mensa_mapping = {
+        'Willi': 'URL_WILLI',
+        'Hopla': 'URL_HOPLA',
+        'Kunst': 'URL_KUNST',
+        'Avz': 'URL_AVZ',
+        'Witz': 'URL_WITZ'
+    }
+    mensa = mensa.capitalize() if mensa else None
+    URL = os.getenv(mensa_mapping.get(mensa, 'URL_WILLI'))
 
 
 async def send_daily_menu():
