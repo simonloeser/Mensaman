@@ -76,7 +76,6 @@ def predict_emoji(text):
     #     max_tokens=1
     # )
     # predicted_emoji = response.choices[0].text.strip()
-
     if "Pizza" in text:
         predicted_emoji = emoji.emojize(":pizza:")
     elif "Käse" in text:
