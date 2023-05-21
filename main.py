@@ -4,8 +4,7 @@ import random
 import discord
 import requests
 import asyncio
-import pytz
-from datetime import datetime, date
+from datetime import datetime, date, timezone, timedelta
 from discord import app_commands
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -124,13 +123,20 @@ def change_mensa(mensa: str = None):
     URL = os.getenv(mensa_mapping.get(mensa, 'URL_WILLI'))
 
 
+@client.event
+async def on_ready():
+    await tree.sync(guild=discord.Object(id=GUILD))
+    print(f'{client.user} is ready to deliver some meals!')
+    client.loop.create_task(send_daily_menu())
+
+
 async def send_daily_menu():
     global URL
     message_sent = False
     while True:
         URL = os.getenv('URL_WILLI')
-        now = datetime.now(pytz.timezone('Europe/Berlin'))
-        target_time = now.replace(hour=18, minute=17, second=0, microsecond=0)
+        now = datetime.now(timezone(timedelta(hours=2)))
+        target_time = now.replace(hour=10, minute=0, second=0, microsecond=0)
 
         if now.weekday() in range(0, 5) and now.hour == target_time.hour and now.minute == target_time.minute and not message_sent:
             today = date.today()
@@ -148,18 +154,14 @@ async def send_daily_menu():
         await asyncio.sleep(seconds_until_target)
 
 
-@client.event
-async def on_ready():
-    await tree.sync(guild=discord.Object(id=GUILD))
-    print(f'{client.user} is ready to deliver some meals!')
-    client.loop.create_task(send_daily_menu())
-
-
 async def main():
     try:
         locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
         await client.start(TOKEN)
-        await send_daily_menu()
+    except asyncio.CancelledError:
+        pass
+    except KeyboardInterrupt:
+        print("Program manually interrupted.")
     finally:
         await client.close()
 
@@ -170,6 +172,6 @@ if __name__ == "__main__":
         loop.run_until_complete(main())
     except KeyboardInterrupt:
         pass
-
-    loop.run_until_complete(loop.shutdown_asyncgens())
-    loop.close()
+    finally:
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
