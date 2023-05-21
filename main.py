@@ -13,7 +13,7 @@ load_dotenv()
 TOKEN = os.getenv('TOKEN')
 GUILD = os.getenv('GUILD')
 CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
-URL = os.getenv('URL_HOPLA')
+URL = os.getenv('URL_WILLI')
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
