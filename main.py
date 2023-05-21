@@ -156,25 +156,28 @@ async def on_ready():
 async def send_daily_menu():
     global URL
     message_sent = False
-    while True:
-        URL = os.getenv('URL_WILLI')
-        now = datetime.now(timezone(timedelta(hours=2)))
-        target_time = now.replace(hour=10, minute=0, second=0, microsecond=0)
+    try:
+        while True:
+            URL = os.getenv('URL_WILLI')
+            now = datetime.now(timezone(timedelta(hours=2)))
+            target_time = now.replace(hour=10, minute=0, second=0, microsecond=0)
 
-        if now.weekday() in range(0, 5) and now.hour == target_time.hour and now.minute == target_time.minute and not message_sent:
-            today = date.today()
-            current_weekday = today.strftime('%A').capitalize()
-            channel = client.get_channel(CHANNEL_ID)
-            embed = await print_menu(URL, current_weekday)
-            await channel.send(embed=embed)
-            message_sent = True
+            if now.weekday() in range(0, 5) and now.hour == target_time.hour and now.minute == target_time.minute and not message_sent:
+                today = date.today()
+                current_weekday = today.strftime('%A').capitalize()
+                channel = client.get_channel(CHANNEL_ID)
+                embed = await print_menu(URL, current_weekday)
+                await channel.send(embed=embed)
+                message_sent = True
 
-        if now.hour != target_time.hour or now.minute != target_time.minute:
-            message_sent = False
+            if now.hour != target_time.hour or now.minute != target_time.minute:
+                message_sent = False
 
-        time_difference = target_time - now
-        seconds_until_target = max(time_difference.total_seconds(), 0)
-        await asyncio.sleep(seconds_until_target)
+            time_difference = target_time - now
+            seconds_until_target = max(time_difference.total_seconds(), 0)
+            await asyncio.sleep(seconds_until_target)
+    except KeyboardInterrupt:
+        pass
 
 
 async def main():
