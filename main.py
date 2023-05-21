@@ -4,6 +4,8 @@ import random
 import discord
 import requests
 import asyncio
+import emoji
+import openai
 from datetime import datetime, date, timezone, timedelta
 from discord import app_commands
 from bs4 import BeautifulSoup
@@ -56,12 +58,34 @@ async def print_menu(url, target_weekday=None, mensa=None):
         color = random.randint(0, 0xFFFFFF)
         embed = discord.Embed(title=f'Essen für {target_weekday} ({mensa.capitalize()})', color=color)
         for i, item in enumerate(menu, start=1):
-            embed.add_field(name=f'Essen {i}', value=item, inline=False)
+            predicted_emoji = predict_emoji(item)
+            item_with_emoji = f'{predicted_emoji} {item}'
+            embed.add_field(name=f'Essen {i}', value=item_with_emoji, inline=False)
         embed.url = URL
     else:
         color = random.randint(0, 0xFFFFFF)
         embed = discord.Embed(title=f'Kein Speiseplan für {target_weekday} verfügbar ({mensa.capitalize()})', color=color)
     return embed
+
+
+def predict_emoji(text):
+    # Henrik trainiere mir mal bitte ein Modell hier, ich habe keine Lust!
+    # response = openai.Completion.create(
+    #     model="gpt-3.5-turbo",
+    #     prompt=text,
+    #     max_tokens=1
+    # )
+    # predicted_emoji = response.choices[0].text.strip()
+
+    if "Pizza" in text:
+        predicted_emoji = emoji.emojize(":pizza:")
+    elif "Käse" in text:
+        predicted_emoji = emoji.emojize(":cheese_wedge:")
+    elif "Spinat" in text:
+        predicted_emoji = emoji.emojize(":leafy_green:")
+    else:
+        predicted_emoji = emoji.emojize(":fork_and_knife:")
+    return predicted_emoji
 
 
 @tree.command(name="meal", description="Gives you the meal of the day", guild=discord.Object(id=GUILD))
