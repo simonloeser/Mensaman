@@ -2,10 +2,10 @@ import locale
 import os
 import random
 import discord
+import openai
 import requests
 import asyncio
 import emoji
-import openai
 from datetime import datetime, date, timezone, timedelta
 from discord import app_commands
 from bs4 import BeautifulSoup
@@ -20,6 +20,7 @@ URL = os.getenv('URL_WILLI')
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 
 def get_daily_menu(url, target_weekday=None):
@@ -59,32 +60,36 @@ async def print_menu(url, target_weekday=None, mensa=None):
         embed = discord.Embed(title=f'Essen für {target_weekday} ({mensa.capitalize()})', color=color)
         for i, item in enumerate(menu, start=1):
             predicted_emoji = predict_emoji(item)
-            item_with_emoji = f'{predicted_emoji} {item}'
+            item_with_emoji = f'{emoji.emojize(predicted_emoji)} {item}'
             embed.add_field(name=f'Essen {i}', value=item_with_emoji, inline=False)
         embed.url = URL
     else:
         color = random.randint(0, 0xFFFFFF)
         embed = discord.Embed(title=f'Kein Speiseplan für {target_weekday} verfügbar ({mensa.capitalize()})', color=color)
+
     return embed
 
 
 def predict_emoji(text):
-    # Henrik trainiere mir mal bitte ein Modell hier, ich habe keine Lust!
-    # response = openai.Completion.create(
-    #     model="gpt-3.5-turbo",
-    #     prompt=text,
-    #     max_tokens=1
-    # )
-    # predicted_emoji = response.choices[0].text.strip()
-    if "Pizza" in text:
-        predicted_emoji = emoji.emojize(":pizza:")
-    elif "Käse" in text:
-        predicted_emoji = emoji.emojize(":cheese_wedge:")
-    elif "Spinat" in text:
-        predicted_emoji = emoji.emojize(":leafy_green:")
+    send_prompt = f"Give me the most fitting emoji for the text '{text}'. The text represents a dish or food item, so please suggest an emoji that best represents it in the style of :pizza: (you can use emoji.emojize)."
+    try:
+        response = openai.Completion.create(
+            engine='text-davinci-003',
+            prompt=send_prompt,
+            max_tokens=20,
+            temperature=0.2,
+            n=1,
+            stop=["and", "or", "with"],
+        )
+        print("Prompt: " + send_prompt)
+        print(response)
+    except Exception as e:
+        print("An error occurred:", str(e))
+    if response is not None and response.choices:
+        predicted_emoji = response.choices[0].text.strip().replace('\n', '')
+        return emoji.demojize(predicted_emoji)
     else:
-        predicted_emoji = emoji.emojize(":fork_and_knife:")
-    return predicted_emoji
+        return ":fork_and_knife:"
 
 
 @tree.command(name="meal", description="Gives you the meal of the day", guild=discord.Object(id=GUILD))
