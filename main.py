@@ -66,12 +66,12 @@ async def print_menu(url, target_weekday=None, mensa=None):
     else:
         color = random.randint(0, 0xFFFFFF)
         embed = discord.Embed(title=f'Kein Speiseplan für {target_weekday} verfügbar ({mensa.capitalize()})', color=color)
-
     return embed
 
 
 def predict_emoji(text):
-    send_prompt = f"Give me the most fitting emoji for the text '{text}'. The text represents a dish or food item, so please suggest an emoji that best represents it in the style of :pizza: (you can use emoji.emojize)."
+    response = None
+    send_prompt = f"Gib mir das passenste Emoji für den Text: '{text}'. Das Emoji sollte im Stil von :pizza: zurückgegeben werden, sodass emoji.emotize verwendet werden kann."
     try:
         response = openai.Completion.create(
             engine='text-davinci-003',
@@ -87,9 +87,9 @@ def predict_emoji(text):
         print("An error occurred:", str(e))
     if response is not None and response.choices:
         predicted_emoji = response.choices[0].text.strip().replace('\n', '')
-        return emoji.demojize(predicted_emoji)
+        return emoji.emojize(predicted_emoji)
     else:
-        return ":fork_and_knife:"
+        return emoji.emojize(":fork_and_knife:")
 
 
 @tree.command(name="meal", description="Gives you the meal of the day", guild=discord.Object(id=GUILD))
@@ -102,8 +102,9 @@ async def meal_command(interaction, day: str = None, mensa: str = None):
 
     change_mensa(mensa)
 
+    await interaction.response.defer()
     embed = await print_menu(URL, target_weekday, mensa)
-    await interaction.response.send_message(embed=embed)
+    await interaction.followup.send(embed=embed)
 
 
 @tree.command(name="allmeals", description="Gives you all remaining meals of the week", guild=discord.Object(id=GUILD))
